@@ -9,10 +9,43 @@ import androidx.browser.customtabs.CustomTabColorSchemeParams
 import androidx.browser.customtabs.CustomTabsIntent
 
 class MainActivity : Activity() {
+    private var launched = false
+    private var hasPaused = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        launchImmersiveTab()
-        finish()
+        if (savedInstanceState != null) {
+            launched = savedInstanceState.getBoolean(STATE_LAUNCHED, false)
+            hasPaused = savedInstanceState.getBoolean(STATE_HAS_PAUSED, false)
+        }
+        if (launched && hasPaused) {
+            finish()
+            return
+        }
+        if (!launched) {
+            launched = true
+            launchImmersiveTab()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (launched) {
+            hasPaused = true
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (launched && hasPaused) {
+            finish()
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(STATE_LAUNCHED, launched)
+        outState.putBoolean(STATE_HAS_PAUSED, hasPaused)
     }
 
     private fun isChromeInstalled(): Boolean {
@@ -55,14 +88,18 @@ class MainActivity : Activity() {
         }
 
         try {
+            // Launch inside this Activity's task so Recents shows an independent Antigravity app card.
             customTabs.launchUrl(this, uri)
         } catch (_: Exception) {
             startActivity(Intent(Intent.ACTION_VIEW, uri))
+            finish()
         }
     }
 
     companion object {
         private const val CHROME_PKG = "com.android.chrome"
         private const val TARGET_URL = "https://antigravity.google.com"
+        private const val STATE_LAUNCHED = "state_launched"
+        private const val STATE_HAS_PAUSED = "state_has_paused"
     }
 }
