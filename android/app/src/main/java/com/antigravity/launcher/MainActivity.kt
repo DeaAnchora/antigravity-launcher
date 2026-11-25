@@ -11,6 +11,7 @@ import androidx.browser.customtabs.CustomTabsIntent
 class MainActivity : Activity() {
     private var launched = false
     private var hasPaused = false
+    private var relaunchOnResume = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -18,14 +19,20 @@ class MainActivity : Activity() {
             launched = savedInstanceState.getBoolean(STATE_LAUNCHED, false)
             hasPaused = savedInstanceState.getBoolean(STATE_HAS_PAUSED, false)
         }
-        if (launched && hasPaused) {
-            finish()
-            return
-        }
         if (!launched) {
             launched = true
+            hasPaused = false
             launchImmersiveTab()
+        } else if (hasPaused) {
+            moveTaskToBack(true)
         }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        // Re-tapping the home screen icon relaunches the Custom Tab cleanly.
+        relaunchOnResume = true
     }
 
     override fun onPause() {
@@ -37,8 +44,16 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        if (relaunchOnResume) {
+            relaunchOnResume = false
+            launched = true
+            hasPaused = false
+            launchImmersiveTab()
+            return
+        }
         if (launched && hasPaused) {
-            finish()
+            // Move task to background instead of finish() so Custom Tabs minimize (PiP) stays alive.
+            moveTaskToBack(true)
         }
     }
 
@@ -80,7 +95,10 @@ class MainActivity : Activity() {
             .setColorSchemeParams(CustomTabsIntent.COLOR_SCHEME_DARK, darkColors)
             .setUrlBarHidingEnabled(true)
             .setShowTitle(true)
-            .setShareState(CustomTabsIntent.SHARE_STATE_ON)
+            .setShareState(CustomTabsIntent.SHARE_STATE_OFF)
+            .setBookmarksButtonEnabled(false)
+            .setDownloadButtonEnabled(false)
+            .setInstantAppsEnabled(false)
             .build()
 
         if (isChromeInstalled()) {
@@ -88,11 +106,10 @@ class MainActivity : Activity() {
         }
 
         try {
-            // Launch inside this Activity's task so Recents shows an independent Antigravity app card.
             customTabs.launchUrl(this, uri)
         } catch (_: Exception) {
             startActivity(Intent(Intent.ACTION_VIEW, uri))
-            finish()
+            moveTaskToBack(true)
         }
     }
 
