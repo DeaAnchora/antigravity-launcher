@@ -1,0 +1,46 @@
+name: Build Antigravity Launcher APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+      - name: Prepare optional stable signing keystore
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_B64" ]; then
+            printf '%s' "$ANDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/launcher.p12"
+            echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/launcher.p12" >> "$GITHUB_ENV"
+          fi
+      - name: Build Debug APK
+        working-directory: android
+        env:
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
+      - name: Verify launchable activity in APK
+        run: |
+          AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 | sort -V | tail -n 1)
+          "$AAPT2" dump badging android/app/build/outputs/apk/debug/app-debug.apk | grep -E "package:|launchable-activity:"
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: antigravity-launcher-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Crisp multicolor Antigravity-inspired stylized A chevron -->
+    <path
+        android:fillColor="#4285F4"
+        android:pathData="M54,26 C57,26 60,29 63,36 L78,76 C79,79 77,82 74,82 C70,82 67,79 64,74 C59,67 54,64 54,64 L54,26 Z" />
+    <path
+        android:fillColor="#EA4335"
+        android:pathData="M54,26 C51,26 48,29 45,36 L30,76 C29,79 31,82 34,82 C38,82 41,79 44,74 C49,67 54,64 54,64 L54,26 Z" />
+    <path
+        android:fillColor="#FBBC05"
+        android:pathData="M34,82 C38,82 41,79 44,74 L48,68 C45,69 40,71 36,76 Z" />
+    <path
+        android:fillColor="#34A853"
+        android:pathData="M74,82 C70,82 67,79 64,74 L60,68 C63,69 68,71 72,76 Z" />
+</vector>
